@@ -9,11 +9,13 @@ var authHeader = {
 };
 
 //TODO: ps = function(timestamp) { return timestamp + '-' + rand() + '-' + rand() + '-' + rand(); }
-//TODO: sid = function(timestamp) { return md5(timestamp + AUTH_PROXY_VALUE + timestamp); }
+//TODO: sid = function(timestamp) { return md5(timestamp + SPDY_PROXY_AUTH_VALUE + timestamp); }
 
 var isSetProxy = false;
 
 var setProxy = function() {
+	if(isSetProxy)
+		return;
 	chrome.proxy.settings.set({
 		value: {
 			mode: "fixed_servers",
@@ -41,6 +43,8 @@ var setProxy = function() {
 };
 
 var unsetProxy = function() {
+	if(!isSetProxy)
+		return;
 	chrome.proxy.settings.set({
 		value: {mode: 'system'},
 		scope: 'regular'

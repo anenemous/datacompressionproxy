@@ -2,7 +2,7 @@
   "version": "1.0",
   "name": "Data Compression Proxy",
   "description": "Data Compression Proxy for Google Chrome on Desktop",
-  "author": "Podobne.pl",
+  "author": "niu tech",
   "permissions": ["webRequest", "webRequestBlocking", "declarativeWebRequest", "proxy", "tabs", "*://*/*"],
   "background": {
     "scripts": ["background.js"]
