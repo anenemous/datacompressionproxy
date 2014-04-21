@@ -56,7 +56,7 @@ var unsetProxy = function() {
 
 var onResponse = function(response) {
 	//Bypass proxy on error for 30s
-	if(response.message == 'bypass' || response.statusLine && response.statusLine.indexOf('502') > -1) {
+	if(response.message == 'bypass' || response.statusLine && response.statusLine.indexOf('50') > -1) {
 		unsetProxy();
 		setTimeout(setProxy, 30000);
 	}
@@ -83,7 +83,7 @@ if(chrome.declarativeWebRequest) {
 		{
 			conditions: [
 				new chrome.declarativeWebRequest.RequestMatcher({
-					responseHeaders: [{nameEquals: 'chrome-proxy', valuePrefix: 'bypass'}],
+					responseHeaders: [{nameEquals: 'status', valuePrefix: '50'}],
 					stages: ['onHeadersReceived']
 				})
 			],
