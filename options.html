@@ -1,0 +1,27 @@
+<!DOCTYPE html>
+<html>
+<head>
+	<title>Data Compression Proxy Options</title>
+	<style>
+		body {
+			padding: 0 30px;
+			font-family: 'Segoe UI', Tahoma, sans-serif;
+			color: #333;
+		}
+		#status {
+			display: none;
+			color: #0c0;
+		}
+	</style>
+</head>
+<body>
+	<form>
+		<h2>Data Compression Proxy Options</h2>
+		<p>Bypass rules (<a href="https://developer.chrome.com/extensions/proxy#bypass_list" target="_blank">format</a>):<br><textarea rows="8" cols="50" id="bypass-rules"></textarea></p>
+		<p>AdBlock rules (<a href="https://developer.chrome.com/extensions/match_patterns" target="_blank">format</a>):<br><textarea rows="8" cols="50" id="adblock-rules"></textarea></p>
+		<p><input type="button" id="save" value="Save"></p>
+		<p id="status">Saved!</p>
+	</form>
+	<script src="options.js"></script>
+</body>
+</html>

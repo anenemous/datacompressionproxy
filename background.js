@@ -11,11 +11,15 @@ var authHeader = {
 //TODO: ps = function(timestamp) { return timestamp + '-' + rand() + '-' + rand() + '-' + rand(); }
 //TODO: sid = function(timestamp) { return md5(timestamp + SPDY_PROXY_AUTH_VALUE + timestamp); }
 
-var isSetProxy = false;
+var defaultBypassRules = "<local>\n10.0.0.0/8\n172.16.0.0/12\n192.168.0.0/16\nfc00::/7\n*-ds.metric.gstatic.com\n*-v4.metric.gstatic.com";
+
+var defaultAdblockRules = "*://*.googlesyndication.com/*\n*://*.googleadservices.com/*\n*://*.doubleclick.net/*\n*://*.intellitxt.com/*\n*://*.tradedoubler.com/*\n*://*.chitika.net/*\n*://*.amazon-adsystem.com/*\n*://*.ads.yahoo.com/*";
+
+var bypassList = (localStorage.getItem('bypassRules') || defaultBypassRules).split('\n').filter(function(e) { return e });
+
+var adblockList = (localStorage.getItem('adblockRules') || defaultAdblockRules).split('\n').filter(function(e) { return e });
 
 var setProxy = function() {
-	if(isSetProxy)
-		return;
 	chrome.proxy.settings.set({
 		value: {
 			mode: "fixed_servers",
@@ -24,34 +28,112 @@ var setProxy = function() {
 					scheme: "https",
 					host: "proxy.googlezip.net"
 				},
-				bypassList: [
-					"<local>",
-					"10.0.0.0/8",
-					"172.16.0.0/12",
-					"192.168.0.0/16",
-					"fc00::/7",
-					"*-ds.metric.gstatic.com",
-					"*-v4.metric.gstatic.com"
-				]
+				bypassList: bypassList
 			}
 		},
 		scope: 'regular'
 	});
-	isSetProxy = true;
+	if(chrome.declarativeWebRequest) {
+		//Chrome Beta/Dev
+		chrome.declarativeWebRequest.onRequest.addRules([
+			//Block ads
+			{
+				conditions: adblockList.map(function(url) {
+					return new chrome.declarativeWebRequest.RequestMatcher({
+						url: {hostContains: url.replace(/https?:|:|\/|\*/gi, '')},
+						stages: ['onBeforeRequest']
+					});
+				}),
+				actions: [
+					new chrome.declarativeWebRequest.CancelRequest()
+				]
+			},
+			//Add auth header
+			{
+				conditions: [
+					new chrome.declarativeWebRequest.RequestMatcher({
+						url: {schemes: ['http']},
+						stages: ['onBeforeSendHeaders']
+					})
+				],
+				actions: [
+					new chrome.declarativeWebRequest.SetRequestHeader(authHeader)
+				]
+			},
+			//Get response on error
+			{
+				conditions: [
+					new chrome.declarativeWebRequest.RequestMatcher({
+						responseHeaders: [{nameEquals: 'status', valuePrefix: '50'}],
+						stages: ['onHeadersReceived']
+					})
+				],
+				actions: [
+					new chrome.declarativeWebRequest.SendMessageToExtension({message: 'bypass'})
+				]
+			}
+		]);
+		//Handle response
+		chrome.declarativeWebRequest.onMessage.addListener(onResponse);
+	} else {
+		//Chrome Stable
+		//Block ads
+		chrome.webRequest.onBeforeRequest.addListener(
+			onCancel,
+			{urls: adblockList},
+			["blocking"]
+		);
+		//Add auth header
+		chrome.webRequest.onBeforeSendHeaders.addListener(
+			onAddAuthHeader,
+			{urls: ["http://*/*"]},
+			["requestHeaders", "blocking"]
+		);
+		//Get response on error
+		chrome.webRequest.onHeadersReceived.addListener(
+			onResponse,
+			{urls: ["http://*/*"]}
+		);
+	}
+	localStorage.setItem('isSetProxy', 1);
 	chrome.browserAction.setIcon({path: 'on.png'});
 	chrome.browserAction.setTitle({title: 'Data Compression Proxy: Enabled'});
 };
 
 var unsetProxy = function() {
-	if(!isSetProxy)
-		return;
 	chrome.proxy.settings.set({
 		value: {mode: 'system'},
 		scope: 'regular'
 	});
-	isSetProxy = false;
+	if(chrome.declarativeWebRequest) {
+		//Chrome Beta/Dev
+		chrome.declarativeWebRequest.onRequest.removeRules();
+		chrome.declarativeWebRequest.onMessage.removeListener(onResponse);
+	} else {
+		//Chrome Stable
+		chrome.webRequest.onBeforeRequest.removeListener(onCancel);
+		chrome.webRequest.onBeforeSendHeaders.removeListener(onAddAuthHeader);
+		chrome.webRequest.onHeadersReceived.removeListener(onResponse);
+	}
+	localStorage.setItem('isSetProxy', 0);
 	chrome.browserAction.setIcon({path: 'off.png'});
 	chrome.browserAction.setTitle({title: 'Data Compression Proxy: Disabled'});
+};
+
+var reloadProxy = function() {
+	unsetProxy();
+	bypassList = (localStorage.getItem('bypassRules') || defaultBypassRules).split('\n').filter(function(e) { return e; });
+	adblockList = (localStorage.getItem('adblockRules') || defaultAdblockRules).split('\n').filter(function(e) { return e; });
+	setProxy();
+};
+
+var onCancel = function(details) {
+	return {cancel: true};
+};
+
+var onAddAuthHeader = function(details) {
+	details.requestHeaders.push(authHeader);
+	return {requestHeaders: details.requestHeaders};
 };
 
 var onResponse = function(response) {
@@ -62,61 +144,11 @@ var onResponse = function(response) {
 	}
 };
 
-if(chrome.declarativeWebRequest) {
-
-	//Chrome Beta/Dev
-	console.log('Using declarativeWebRequest');
-	chrome.declarativeWebRequest.onRequest.addRules([
-		//Add auth header
-		{
-			conditions: [
-				new chrome.declarativeWebRequest.RequestMatcher({
-					url: {schemes: ['http']},
-					stages: ['onBeforeSendHeaders']
-				})
-			],
-			actions: [
-				new chrome.declarativeWebRequest.SetRequestHeader(authHeader)
-			]
-		},
-		//Get response on error
-		{
-			conditions: [
-				new chrome.declarativeWebRequest.RequestMatcher({
-					responseHeaders: [{nameEquals: 'status', valuePrefix: '50'}],
-					stages: ['onHeadersReceived']
-				})
-			],
-			actions: [
-				new chrome.declarativeWebRequest.SendMessageToExtension({message: 'bypass'})
-			]
-		}
-	]);
-	//Handle response
-	chrome.declarativeWebRequest.onMessage.addListener(onResponse);
-
-} else {
-
-	//Chrome Stable
-	console.log('Using webRequest');
-	//Add auth header
-	chrome.webRequest.onBeforeSendHeaders.addListener(
-		function(details) {
-			details.requestHeaders.push(authHeader);
-			return {requestHeaders: details.requestHeaders};
-		},
-		{urls: ["http://*/*"]},
-		["requestHeaders", "blocking"]
-	);
-	//Get response on error
-	chrome.webRequest.onHeadersReceived.addListener(
-		onResponse,
-		{urls: ["http://*/*"]}
-	);
-}
-
 chrome.browserAction.onClicked.addListener(function() {
-	isSetProxy ? unsetProxy() : setProxy();
+	//Toggle proxy on button clicked
+	localStorage.getItem('isSetProxy') == 1 ? unsetProxy() : setProxy();
 });
 
-setProxy();
+if(localStorage.getItem('isSetProxy') == 1) {
+	setProxy();
+}
