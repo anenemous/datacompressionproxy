@@ -9,15 +9,13 @@ var MD5 = function(e) {
 
 var timeout = 30000;
 
-var timestamp = Date.now().toString().substring(0, 10);
-
-var random = Math.floor(Math.random() * 1000000000);
-
-var authValue = 'ac4500dd3b7579186c1b0620614fdb1f7d61f944';
-
-var authHeader = {
-	name: 'Chrome-Proxy',
-	value: 'ps=' + timestamp + '-' + random + '-' + random + '-' + random + ', sid=' + MD5(timestamp + authValue + timestamp) + ', v=0, c=webview'
+var authHeader = function() {
+	var authValue = 'ac4500dd3b7579186c1b0620614fdb1f7d61f944';
+	var timestamp = Date.now().toString().substring(0, 10);
+	return {
+		name: 'Chrome-Proxy',
+		value: 'ps=' + timestamp + '-' + Math.floor(Math.random() * 1000000000) + '-' + Math.floor(Math.random() * 1000000000) + '-' + Math.floor(Math.random() * 1000000000) + ', sid=' + MD5(timestamp + authValue + timestamp) + ', v=0, c=webview'
+	};
 };
 
 var defaultBypassRules = '<local>\n10.0.0.0/8\n172.16.0.0/12\n192.168.0.0/16\nfc00::/7\n*-ds.metric.gstatic.com\n*-v4.metric.gstatic.com';
@@ -66,7 +64,7 @@ var setProxy = function() {
 					})
 				],
 				actions: [
-					new chrome.declarativeWebRequest.SetRequestHeader(authHeader)
+					new chrome.declarativeWebRequest.SetRequestHeader(authHeader())
 				]
 			},
 			//Get response on error
@@ -104,7 +102,7 @@ var setProxy = function() {
 			{urls: ['http://*/*']}
 		);
 	}
-	localStorage.setItem('isSetProxy', 1);
+	localStorage.setItem('isSetProxy', '1');
 	chrome.browserAction.setIcon({path: 'on.png'});
 	chrome.browserAction.setTitle({title: 'Data Compression Proxy: Enabled'});
 };
@@ -124,7 +122,7 @@ var unsetProxy = function() {
 		chrome.webRequest.onBeforeSendHeaders.removeListener(onAddAuthHeader);
 		chrome.webRequest.onHeadersReceived.removeListener(onResponse);
 	}
-	localStorage.setItem('isSetProxy', 0);
+	localStorage.setItem('isSetProxy', '0');
 	chrome.browserAction.setIcon({path: 'off.png'});
 	chrome.browserAction.setTitle({title: 'Data Compression Proxy: Disabled'});
 };
@@ -141,7 +139,7 @@ var onCancel = function(details) {
 };
 
 var onAddAuthHeader = function(details) {
-	details.requestHeaders.push(authHeader);
+	details.requestHeaders.push(authHeader());
 	return {requestHeaders: details.requestHeaders};
 };
 
@@ -155,9 +153,9 @@ var onResponse = function(response) {
 
 chrome.browserAction.onClicked.addListener(function() {
 	//Toggle proxy on button clicked
-	localStorage.getItem('isSetProxy') == 1 ? unsetProxy() : setProxy();
+	localStorage.getItem('isSetProxy') === '1' ? unsetProxy() : setProxy();
 });
 
-if(localStorage.getItem('isSetProxy') == 1) {
+if(localStorage.getItem('isSetProxy') !== '0') {
 	setProxy();
 }
