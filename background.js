@@ -18,7 +18,7 @@ var authHeader = function() {
 	};
 };
 
-var defaultBypassRules = '<local>\n10.0.0.0/8\n172.16.0.0/12\n192.168.0.0/16\nfc00::/7\n*-ds.metric.gstatic.com\n*-v4.metric.gstatic.com';
+var defaultBypassRules = '*.metric.gstatic.com';
 
 var defaultAdblockRules = '*://*.googlesyndication.com/*\n*://*.googleadservices.com/*\n*://*.doubleclick.net/*\n*://*.intellitxt.com/*\n*://*.tradedoubler.com/*\n*://*.chitika.net/*\n*://*.amazon-adsystem.com/*\n*://*.yieldmanager.com/*\n*://ads.yahoo.com/*';
 
@@ -29,13 +29,20 @@ var adblockList = (localStorage.getItem('adblockRules') || defaultAdblockRules).
 var setProxy = function() {
 	chrome.proxy.settings.set({
 		value: {
-			mode: 'fixed_servers',
-			rules: {
-				proxyForHttp: {
-					scheme: 'https',
-					host: 'proxy.googlezip.net'
-				},
-				bypassList: bypassList
+			mode: 'pac_script',
+			pacScript: {
+				data:	"function FindProxyForURL(url, host) {\n" +
+					"  if (url.substring(0,5) == 'http:' && \n" +
+					"      !isPlainHostName(host) && \n" +
+					"      !shExpMatch(host, '*.local') && \n" +
+					"      !isInNet(dnsResolve(host), '10.0.0.0', '255.0.0.0') && \n" +
+					"      !isInNet(dnsResolve(host), '172.16.0.0',  '255.240.0.0') && \n" +
+					"      !isInNet(dnsResolve(host), '192.168.0.0',  '255.255.0.0') && \n" +
+					"      !isInNet(dnsResolve(host), '127.0.0.0', '255.255.255.0') && \n" +
+					"      !shExpMatch(host, '(" + bypassList.join('|') + ")'))\n" +
+					"    return 'HTTPS proxy.googlezip.net:443; PROXY compress.googlezip.net:80; PROXY 74.125.205.211:80; DIRECT';\n" +
+					"  return 'DIRECT';\n" +
+					"}"
 			}
 		},
 		scope: 'regular'
