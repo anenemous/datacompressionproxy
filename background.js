@@ -12,15 +12,16 @@ var timeout = 30000;
 var authHeader = function() {
 	var authValue = 'ac4500dd3b7579186c1b0620614fdb1f7d61f944';
 	var timestamp = Date.now().toString().substring(0, 10);
+	var chromeVersion = navigator.appVersion.match(/Chrome\/(\d+)\.(\d+)\.(\d+)\.(\d+)/);
 	return {
 		name: 'Chrome-Proxy',
-		value: 'ps=' + timestamp + '-' + Math.floor(Math.random() * 1000000000) + '-' + Math.floor(Math.random() * 1000000000) + '-' + Math.floor(Math.random() * 1000000000) + ', sid=' + MD5(timestamp + authValue + timestamp) + ', v=0, c=webview'
+		value: 'ps=' + timestamp + '-' + Math.floor(Math.random() * 1000000000) + '-' + Math.floor(Math.random() * 1000000000) + '-' + Math.floor(Math.random() * 1000000000) + ', sid=' + MD5(timestamp + authValue + timestamp) + ', b=' + chromeVersion[3] + ', p=' + chromeVersion[4] + ', c=win'
 	};
 };
 
 var defaultBypassRules = '*.metric.gstatic.com';
 
-var defaultAdblockRules = '*://*.googlesyndication.com/*\n*://*.googleadservices.com/*\n*://*.doubleclick.net/*\n*://*.intellitxt.com/*\n*://*.tradedoubler.com/*\n*://*.chitika.net/*\n*://*.amazon-adsystem.com/*\n*://*.yieldmanager.com/*\n*://ads.yahoo.com/*';
+var defaultAdblockRules = '*://*.googlesyndication.com/*\n*://*.googleadservices.com/*\n*://*.doubleclick.net/*\n*://*.intellitxt.com/*\n*://*.tradedoubler.com/*\n*://*.chitika.net/*\n*://*.amazon-adsystem.com/*\n*://*.yieldmanager.com/*\n*://ads.yahoo.com/*\n*://reklama.onet.pl/*\n*://*.adview.pl/*\n*://*.adocean.pl/*';
 
 var bypassList = (localStorage.getItem('bypassRules') || defaultBypassRules).split('\n').filter(function(e) { return e });
 
