@@ -25,7 +25,7 @@ var defaultDisableTimeout = 30;
 
 var bypassList = (localStorage.getItem('bypassRules') || defaultBypassRules).split('\n').filter(function(e) { return e });
 
-var adblockList = (localStorage.getItem('adblockRules') || defaultAdblockRules).split('\n').filter(function(e) { return e };
+var adblockList = (localStorage.getItem('adblockRules') || defaultAdblockRules).split('\n').filter(function(e) { return e });
 
 var timeout = (localStorage.getItem('disableTimeout') || defaultDisableTimeout) * 1000;
 
@@ -154,7 +154,7 @@ var onAddAuthHeader = function(details) {
 };
 
 var onResponse = function(response) {
-	//Bypass proxy on error for 30s
+	//Bypass proxy on error for *timeout* seconds
 	if(response.message == 'bypass' || response.statusLine && response.statusLine.indexOf('50') > -1) {
 		unsetProxy();
 		setTimeout(setProxy, timeout);
