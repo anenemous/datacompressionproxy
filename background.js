@@ -29,6 +29,8 @@ var adblockList = (localStorage.getItem('adblockRules') || defaultAdblockRules).
 
 var timeout = (localStorage.getItem('disableTimeout') || defaultDisableTimeout) * 1000;
 
+var enabled = false;
+
 var setProxy = function() {
 	chrome.proxy.settings.set({
 		value: {
@@ -115,9 +117,10 @@ var setProxy = function() {
 	localStorage.setItem('isSetProxy', '1');
 	chrome.browserAction.setIcon({path: 'on.png'});
 	chrome.browserAction.setTitle({title: 'Data Compression Proxy: Enabled'});
+	enabled = true;
 };
 
-var unsetProxy = function() {
+var unsetProxy = function(user) {
 	chrome.proxy.settings.set({
 		value: {mode: 'system'},
 		scope: 'regular'
@@ -132,9 +135,15 @@ var unsetProxy = function() {
 		chrome.webRequest.onBeforeSendHeaders.removeListener(onAddAuthHeader);
 		chrome.webRequest.onHeadersReceived.removeListener(onResponse);
 	}
-	localStorage.setItem('isSetProxy', '0');
-	chrome.browserAction.setIcon({path: 'off.png'});
-	chrome.browserAction.setTitle({title: 'Data Compression Proxy: Disabled'});
+	if (user) {
+		localStorage.setItem('isSetProxy', '0');
+		chrome.browserAction.setIcon({path: 'off.png'});
+		chrome.browserAction.setTitle({title: 'Data Compression Proxy: Disabled'});
+	} else {
+		chrome.browserAction.setIcon({path: 'disabled.png'});
+		chrome.browserAction.setTitle({title: 'Data Compression Proxy: Temporarily Disabled'});
+	}
+	enabled = false;
 };
 
 var reloadProxy = function() {
@@ -156,14 +165,14 @@ var onAddAuthHeader = function(details) {
 var onResponse = function(response) {
 	//Bypass proxy on error for *timeout* seconds
 	if(response.message == 'bypass' || response.statusLine && response.statusLine.indexOf('50') > -1) {
-		unsetProxy();
+		unsetProxy(false);
 		setTimeout(setProxy, timeout);
 	}
 };
 
 chrome.browserAction.onClicked.addListener(function() {
 	//Toggle proxy on button clicked
-	localStorage.getItem('isSetProxy') === '1' ? unsetProxy() : setProxy();
+	enabled ? unsetProxy(true) : setProxy();
 });
 
 if(localStorage.getItem('isSetProxy') !== '0') {
