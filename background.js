@@ -29,7 +29,18 @@ var adblockList = (localStorage.getItem('adblockRules') || defaultAdblockRules).
 
 var timeout = localStorage.getItem('disableTimeout') || defaultDisableTimeout;
 
-var enabled = false;
+var today = function() {
+	var date = new Date;
+	return date.getFullYear() + '-' + (date.getMonth() + 1) + '-' + date.getDate();
+};
+
+var tempBytes = 0;
+
+var tempOriginalBytes = 0;
+
+var sessionBytes = 0;
+
+var sessionOriginalBytes = 0;
 
 var setProxy = function() {
 	chrome.proxy.settings.set({
@@ -111,13 +122,13 @@ var setProxy = function() {
 		//Get response on error
 		chrome.webRequest.onHeadersReceived.addListener(
 			onResponse,
-			{urls: ['http://*/*']}
+			{urls: ['http://*/*']},
+			['responseHeaders', 'blocking']
 		);
 	}
 	localStorage.setItem('isSetProxy', '1');
 	chrome.browserAction.setIcon({path: 'on.png'});
 	chrome.browserAction.setTitle({title: 'Data Compression Proxy: Enabled'});
-	enabled = true;
 };
 
 var unsetProxy = function(userRequested) {
@@ -143,13 +154,13 @@ var unsetProxy = function(userRequested) {
 		chrome.browserAction.setIcon({path: 'disabled.png'});
 		chrome.browserAction.setTitle({title: 'Data Compression Proxy: Temporarily Disabled'});
 	}
-	enabled = false;
 };
 
 var reloadProxy = function() {
 	unsetProxy(false);
 	bypassList = (localStorage.getItem('bypassRules') || defaultBypassRules).split('\n').filter(function(e) { return e; });
 	adblockList = (localStorage.getItem('adblockRules') || defaultAdblockRules).split('\n').filter(function(e) { return e; });
+	timeout = localStorage.getItem('disableTimeout') || defaultDisableTimeout;
 	setProxy();
 };
 
@@ -167,12 +178,34 @@ var onResponse = function(response) {
 	if(response.message == 'bypass' || response.statusLine && response.statusLine.indexOf('50') > -1) {
 		unsetProxy(false);
 		setTimeout(setProxy, timeout);
+	} else if(response.responseHeaders) {
+		//Count compressed and original bytes
+		var contentLengths = response.responseHeaders.filter(function(h) { return h.name.toLowerCase().indexOf('content-length') > -1; });
+		if(contentLengths.length == 2) {
+			tempBytes += parseInt(contentLengths[0].value);
+			tempOriginalBytes += parseInt(contentLengths[1].value);
+			sessionBytes += parseInt(contentLengths[0].value);
+			sessionOriginalBytes += parseInt(contentLengths[1].value);
+		}
 	}
 };
 
+setInterval(function() {
+	//Save total bytes every 5 minutes if proxy set
+	if(localStorage.getItem('isSetProxy') === '1') {
+		var totalBytes = JSON.parse(localStorage.getItem('totalBytes')) || {};
+		totalBytes[today()] = totalBytes[today()] || [0, 0];
+		totalBytes[today()][0] += tempBytes; //MB
+		totalBytes[today()][1] += tempOriginalBytes; //MB
+		localStorage.setItem('totalBytes', JSON.stringify(totalBytes));
+		tempBytes = tempOriginalBytes = 0;
+		totalBytes = null;
+	}
+}, 300000);
+
 chrome.browserAction.onClicked.addListener(function() {
 	//Toggle proxy on button clicked
-	enabled ? unsetProxy(true) : setProxy();
+	localStorage.getItem('isSetProxy') === '1' ? unsetProxy(true) : setProxy();
 });
 
 if(localStorage.getItem('isSetProxy') !== '0') {

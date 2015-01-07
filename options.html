@@ -2,27 +2,62 @@
 <html>
 <head>
 	<title>Data Compression Proxy Options</title>
+	<link rel="stylesheet" href="chartist.css">
 	<style>
 		body {
 			padding: 0 30px;
 			font-family: 'Segoe UI', Tahoma, sans-serif;
 			color: #333;
 		}
+		#left {
+			float: left;
+			width: 40%;
+		}
+		#right {
+			float: right;
+			width: 60%;
+		}
 		#status {
 			display: none;
 			color: #0c0;
 		}
+		#clear {
+			clear: both;
+		}
+		textarea {
+			width: 90%;
+		}
 	</style>
 </head>
 <body>
-	<form>
+	<form id="left">
 		<h2>Data Compression Proxy Options</h2>
-		<p>Bypass rules (<a href="https://developer.chrome.com/extensions/proxy#bypass_list" target="_blank">format</a>; excluding &lt;local&gt; and &lt;ip-literal&gt;):<br><textarea rows="8" cols="50" id="bypass-rules"></textarea></p>
-		<p>AdBlock rules (<a href="https://developer.chrome.com/extensions/match_patterns" target="_blank">format</a>):<br><textarea rows="8" cols="50" id="adblock-rules"></textarea></p>
-		<p>Disable Timeout (seconds):<br><input id="disable-timeout" value=""></p>
+		<p>Bypass rules (<a href="https://developer.chrome.com/extensions/proxy#bypass_list" target="_blank">format</a>; excluding &lt;local&gt; and &lt;ip-literal&gt;):<br><textarea rows="8" cols="60" id="bypass-rules"></textarea></p>
+		<p>AdBlock rules (<a href="https://developer.chrome.com/extensions/match_patterns" target="_blank">format</a>):<br><textarea rows="8" cols="60" id="adblock-rules"></textarea></p>
+		<p>Disable Timeout (seconds):<br><input type="number" id="disable-timeout" min="0" size="3" value=""></p>
 		<p><input type="button" id="save" value="Save"></p>
 		<p id="status">Saved!</p>
 	</form>
+	<div id="right">
+		<h2>Data Compression Proxy Statistics</h2>
+		<p><b>This session:</b> <span id="session-mbytes"></span> MB compressed, <span id="session-mbytes-original"></span> MB original, <span id="session-percent"></span> % savings</p>
+		<p><b>Total:</b> <span id="total-mbytes"></span> MB compressed, <span id="total-mbytes-original"></span> MB original, <span id="total-percent"></span> % savings</p>
+		<p>Statistics are estimated based on content-length headers. Refreshed every 5 minutes. Available only in Chrome Stable.</p>
+		<div class="ct-chart ct-major-twelfth"></div>
+		<form action="https://www.paypal.com/cgi-bin/webscr" method="post" target="_top">
+			<input type="hidden" name="cmd" value="_donations">
+			<input type="hidden" name="business" value="jerzyglowacki@poczta.onet.pl">
+			<input type="hidden" name="lc" value="US">
+			<input type="hidden" name="item_name" value="Data Compression Proxy">
+			<input type="hidden" name="no_note" value="0">
+			<input type="hidden" name="currency_code" value="USD">
+			<input type="hidden" name="bn" value="PP-DonationsBF:btn_donate_LG.gif:NonHostedGuest">
+			<input type="image" src="https://www.paypalobjects.com/en_US/i/btn/btn_donate_LG.gif" border="0" name="submit" alt="PayPal - The safer, easier way to pay online!">
+			<img alt="" border="0" src="https://www.paypalobjects.com/en_US/i/scr/pixel.gif" width="1" height="1">
+		</form>
+	</div>
+	<div id="clear"></div>
+	<script src="chartist.js"></script>
 	<script src="options.js"></script>
 </body>
 </html>
