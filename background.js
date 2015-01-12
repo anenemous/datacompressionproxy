@@ -123,7 +123,7 @@ var setProxy = function() {
 		chrome.webRequest.onHeadersReceived.addListener(
 			onResponse,
 			{urls: ['http://*/*']},
-			['responseHeaders', 'blocking']
+			['responseHeaders']
 		);
 	}
 	localStorage.setItem('isSetProxy', '1');
@@ -180,26 +180,26 @@ var onResponse = function(response) {
 		setTimeout(setProxy, timeout);
 	} else if(response.responseHeaders) {
 		//Count compressed and original bytes
-		var contentLengths = response.responseHeaders.filter(function(h) { return h.name.toLowerCase().indexOf('content-length') > -1; });
-		if(contentLengths.length == 2) {
-			tempBytes += parseInt(contentLengths[0].value);
-			tempOriginalBytes += parseInt(contentLengths[1].value);
-			sessionBytes += parseInt(contentLengths[0].value);
-			sessionOriginalBytes += parseInt(contentLengths[1].value);
-		}
+		response.responseHeaders.forEach(function(h) {
+			if(h.name.toLowerCase() === 'content-length')
+				tempBytes += parseInt(h.value);
+			else if(h.name.toLowerCase() === 'x-original-content-length')
+				tempOriginalBytes += parseInt(h.value);
+		});
 	}
 };
 
 setInterval(function() {
-	//Save total bytes every 5 minutes if proxy set
+	//Save total bytes every 5 minutes if proxy is set
 	if(localStorage.getItem('isSetProxy') === '1') {
 		var totalBytes = JSON.parse(localStorage.getItem('totalBytes')) || {};
 		totalBytes[today()] = totalBytes[today()] || [0, 0];
 		totalBytes[today()][0] += tempBytes; //MB
 		totalBytes[today()][1] += tempOriginalBytes; //MB
 		localStorage.setItem('totalBytes', JSON.stringify(totalBytes));
+		sessionBytes += tempBytes;
+		sessionOriginalBytes += tempOriginalBytes;
 		tempBytes = tempOriginalBytes = 0;
-		totalBytes = null;
 	}
 }, 300000);
 
