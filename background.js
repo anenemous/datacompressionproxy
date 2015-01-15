@@ -179,13 +179,20 @@ var onResponse = function(response) {
 		unsetProxy(false);
 		setTimeout(setProxy, timeout);
 	} else if(response.responseHeaders) {
+		var compressedBytes = 0;
+		var originalBytes = 0;
 		//Count compressed and original bytes
 		response.responseHeaders.forEach(function(h) {
-			if(h.name.toLowerCase() === 'content-length')
-				tempBytes += parseInt(h.value);
-			else if(h.name.toLowerCase() === 'x-original-content-length')
-				tempOriginalBytes += parseInt(h.value);
+			if(h.name.toLowerCase() === 'content-length') {
+				compressedBytes = parseInt(h.value);
+			}
+			else if(h.name.toLowerCase() === 'x-original-content-length') {
+				originalBytes = parseInt(h.value);
+			}
 		});
+		tempBytes += compressedBytes;
+		//Assume original bytes equals compressed bytes if not present
+		tempOriginalBytes += (originalBytes === 0 ? compressedBytes : originalBytes);
 	}
 };
 

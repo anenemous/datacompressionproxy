@@ -2,7 +2,6 @@
 <html>
 <head>
 	<title>Data Compression Proxy Options</title>
-	<meta http-equiv="refresh" content="300000">
 	<link rel="stylesheet" href="chartist.css">
 	<style>
 		body {
@@ -46,6 +45,7 @@
 		<p>Statistics are estimated based on content-length headers. Refreshed every 5 minutes. Available only in Chrome Stable.</p>
 		<div class="ct-chart ct-major-twelfth"></div>
 		<form action="https://www.paypal.com/cgi-bin/webscr" method="post" target="_top">
+			<p>
 			<input type="hidden" name="cmd" value="_donations">
 			<input type="hidden" name="business" value="jerzyglowacki@poczta.onet.pl">
 			<input type="hidden" name="lc" value="US">
@@ -53,8 +53,10 @@
 			<input type="hidden" name="no_note" value="0">
 			<input type="hidden" name="currency_code" value="USD">
 			<input type="hidden" name="bn" value="PP-DonationsBF:btn_donate_LG.gif:NonHostedGuest">
-			<input type="image" src="https://www.paypalobjects.com/en_US/i/btn/btn_donate_LG.gif" border="0" name="submit" alt="PayPal - The safer, easier way to pay online!">
+			<input type="image" src="https://www.paypalobjects.com/en_US/i/btn/btn_donate_LG.gif" border="0" name="submit" alt="Donate with PayPal" style="vertical-align: middle;">
 			<img alt="" border="0" src="https://www.paypalobjects.com/en_US/i/scr/pixel.gif" width="1" height="1">
+			<input type="button" id="reset" value="Reset">
+			</p>
 		</form>
 	</div>
 	<div id="clear"></div>
